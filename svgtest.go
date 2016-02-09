@@ -4,12 +4,12 @@ import (
 	"encoding/xml"
 	"fmt"
 	"os"
+	"strings"
 )
 
 type pathString struct {
-	String string
-	Sign   float32
-	Side   int
+	Strings []string
+	Cur     int
 }
 type Path struct {
 	D     string `xml:"d,attr"`
@@ -42,159 +42,121 @@ func appendPath(data string) {
 	svg.Paths = append(svg.Paths, p)
 }
 
+func revert(s string) string {
+	parts := strings.Fields(s)
+	l := len(parts)
+	newParts := make([]string, l)
+	for i, part := range parts {
+		if i%2 == 0 {
+			continue
+		}
+		if i%4 == 3 {
+			continue
+		}
+		if part[0] == '-' {
+			parts[i] = part[:len(part)]
+		} else {
+			parts[i] = "-" + part
+		}
+	}
+	fmt.Println(strings.Join(parts, " "))
+	for i, _ := range parts {
+		if i%2 == 0 {
+			newParts[l-2-i] = parts[i]
+			newParts[l-1-i] = parts[i+1]
+		}
+	}
+	fmt.Println(strings.Join(newParts, " "))
+	return strings.Join(newParts, " ")
+}
+
 func start(x, y float32) *pathString {
 	ps := &pathString{
-		String: fmt.Sprintf("m %f,%f", x, y),
-		Sign:   1,
-		Side:   0,
+		Strings: []string{fmt.Sprintf("m %f,%f", x, y)},
+		Cur:     0,
 	}
 	return ps
 }
 
 func (ps *pathString) h(l float32) {
 	s := fmt.Sprintf(" h %f", l)
-	ps.String = ps.String + s
+	ps.Strings[ps.Cur] = ps.Strings[ps.Cur] + s
 }
 
 func (ps *pathString) v(l float32) {
 	s := fmt.Sprintf(" v %f", l)
-	ps.String = ps.String + s
+	ps.Strings[ps.Cur] = ps.Strings[ps.Cur] + s
+}
+
+func (ps *pathString) m(x, y float32) {
+	ps.Cur += 1
+	ps.Strings = append(ps.Strings, "")
+	//s := fmt.Sprintf(" M %f %f", x, y)
+	//ps.Strings[ps.Cur] = ps.Strings[ps.Cur] + s
 }
 
 func (ps *pathString) draw(dir string, l float32) {
 	s := fmt.Sprintf(" %s %f", dir, l)
-	ps.String = ps.String + s
+	ps.Strings[ps.Cur] = ps.Strings[ps.Cur] + s
 }
 
 func (ps *pathString) close() {
-	ps.String = ps.String + " z"
+	ps.Strings[ps.Cur] = ps.Strings[ps.Cur] + " z"
 	ps.done()
 }
 
 func (ps *pathString) done() {
-	appendPath(string(ps.String))
+	s := ps.Strings[0]
+	s += revert(ps.Strings[2])
+	s += revert(ps.Strings[1])
+	//s := strings.Join(ps.Strings, " ")
+	appendPath(s)
 }
 
-func (ps *pathString) line(l, wall, teeth, sign float32, cut, hinv, end bool) (lowend bool) {
-	lowend = false
+func (ps *pathString) line(dir string, l, wall, teeth, sign float32) float32 {
 	var otherdir string
-	var dir string
-	//var sign float32
-	var inv float32
 
-	if cut {
-		l -= wall
-		teeth -= wall
-		if end {
-			teeth += wall
-		}
-	}
-	if ps.Sign == -1 {
-		l -= wall
-	}
-	ps.Sign = sign
-	switch ps.Side {
-	case 0:
-		sign = 1
-		inv = 1
-		dir = "h"
-		otherdir = "v"
-		if hinv {
-			inv *= -1
-		}
-	case 1:
-		sign = -1
-		inv = 1
-		dir = "v"
+	if dir == "v" {
 		otherdir = "h"
-		if hinv {
-			sign *= -1
-		}
-	case 2:
-		sign = -1
-		inv = -1
-		dir = "h"
+	} else if dir == "h" {
 		otherdir = "v"
-		if hinv {
-			inv *= -1
-		}
-	case 3:
-		sign = 1
-		inv = -1
-		dir = "v"
-		otherdir = "h"
-		if hinv {
-			sign *= -1
-		}
 	}
+
 	for l > teeth {
 		if l-teeth < wall {
-			ps.draw(dir, inv*(l-wall))
+			ps.draw(dir, l-wall)
 			l -= l - wall
 		} else {
-			ps.draw(dir, inv*teeth)
+			ps.draw(dir, teeth)
 			l -= teeth
 		}
-		ps.draw(otherdir, sign*ps.Sign*wall)
-		ps.Sign *= -1
-		if cut {
-			cut = false
-			if !end {
-				teeth += wall
-			}
-		}
+		ps.draw(otherdir, sign*wall)
+		sign *= -1
 	}
 	if l > 0 {
-		ps.draw(dir, inv*l)
+		ps.draw(dir, l)
 	}
-	ps.Side += 1
-	ps.Side %= 4
-	if ps.Sign == 1 {
-		lowend = true
-	}
-	return
+	return sign
 }
 
 func base(x, y, width, height, depth, wall, teeth float32) {
-	var low bool
-	var nextlow bool
 	base := start(x, y)
-	above := start(x+wall, y-(wall+2))
-	right := start(x+width+(wall+2), y+wall)
-	below := start(x+width-wall, y+height+(wall+2))
-	left := start(x-(wall+2), y+height-wall)
-	base.line(width, wall, teeth, 1, false, false, false)
-	base.line(height, wall, teeth, 1, false, false, false)
-	base.line(width, wall, teeth, 1, false, false, false)
-	base.line(height, wall, teeth, 1, false, false, false)
-	above.Side = 2
-	nextlow = above.line(width, wall, teeth, -1, true, true, false)
-	above.line(depth, wall, teeth, 1, false, true, false)
-	above.line(width, wall, width, 1, false, true, false)
-	above.line(depth, wall, teeth, 1, true, true, false)
-	right.Side = 1
-	low = nextlow
-	nextlow = right.line(height, wall, teeth, -1, true, true, low)
-	right.line(depth, wall, teeth, 1, false, true, low)
-	right.line(height, wall, height, 1, false, true, low)
-	right.line(depth, wall, teeth, 1, true, true, low)
-	below.Side = 0
-	low = nextlow
-	nextlow = below.line(width, wall, teeth, -1, true, true, low)
-	below.line(depth, wall, teeth, 1, false, true, low)
-	below.line(width, wall, width, 1, false, true, low)
-	below.line(depth, wall, teeth, 1, true, true, low)
-	left.Side = 3
-	low = nextlow
-	nextlow = left.line(height, wall, teeth, -1, true, true, low)
-	left.line(depth, wall, teeth, 1, false, true, low)
-	left.line(height, wall, height, 1, false, true, low)
-	left.line(depth, wall, teeth, 1, true, true, low)
-	base.close()
-	above.close()
-	right.close()
-	below.close()
-	left.close()
+	sign := base.line("h", width, wall, teeth, 1)
+	if sign == -1 {
+		base.line("v", height-wall, wall, teeth, -1)
+	} else {
+		base.line("v", height, wall, teeth, -1)
+	}
+	
+	base.m(x, y)
+	sign = base.line("v", height, wall, teeth, -1)
+	base.m(x, y)
+	if sign == 1 {
+		base.line("h", width-wall, wall, teeth, 1)
+	} else {
+		base.line("h", width, wall, teeth, 1)
+	}
+	base.done()
 }
 
 func do(width, height, depth, wall, teeth float32) {

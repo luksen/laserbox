@@ -32,7 +32,7 @@ var svg *Svg = &Svg{
 	ViewBox: "0 0 210 297",
 	Version: "1.1",
 }
-var Style = "opacity:1;fill:none;fill-opacity:1;stroke:#ff0000;stroke-width:0.99999994;stroke-linecap:butt;stroke-miterlimit:10;stroke-dasharray:none;stroke-opacity:1"
+var Style = "opacity:1;fill:none;fill-opacity:1;stroke:#ff0000;stroke-width:0.282;stroke-linecap:butt;stroke-miterlimit:10;stroke-dasharray:none;stroke-opacity:1"
 
 func appendPath(data string) {
 	p := &Path{
@@ -43,6 +43,7 @@ func appendPath(data string) {
 }
 
 func revert(s string) string {
+	fmt.Println(s)
 	parts := strings.Fields(s)
 	l := len(parts)
 	newParts := make([]string, l)
@@ -50,16 +51,15 @@ func revert(s string) string {
 		if i%2 == 0 {
 			continue
 		}
-		if i%4 == 3 {
-			continue
-		}
+		//if i%4 == 3 {
+		//continue
+		//}
 		if part[0] == '-' {
-			parts[i] = part[:len(part)]
+			parts[i] = part[1:len(part)]
 		} else {
 			parts[i] = "-" + part
 		}
 	}
-	fmt.Println(strings.Join(parts, " "))
 	for i, _ := range parts {
 		if i%2 == 0 {
 			newParts[l-2-i] = parts[i]
@@ -70,50 +70,48 @@ func revert(s string) string {
 	return strings.Join(newParts, " ")
 }
 
-func start(x, y float32) *pathString {
+func start(x, y float64) *pathString {
 	ps := &pathString{
-		Strings: []string{fmt.Sprintf("m %f,%f", x, y)},
-		Cur:     0,
+		Strings: []string{fmt.Sprintf("m %f,%f", x, y), ""},
+		Cur:     1,
 	}
 	return ps
 }
 
-func (ps *pathString) h(l float32) {
+func (ps *pathString) move(x, y float64) {
+	ps.Strings[0] = fmt.Sprintf("m %f,%f", x, y)
+}
+
+func (ps *pathString) h(l float64) {
 	s := fmt.Sprintf(" h %f", l)
 	ps.Strings[ps.Cur] = ps.Strings[ps.Cur] + s
 }
 
-func (ps *pathString) v(l float32) {
+func (ps *pathString) v(l float64) {
 	s := fmt.Sprintf(" v %f", l)
 	ps.Strings[ps.Cur] = ps.Strings[ps.Cur] + s
 }
 
-func (ps *pathString) m(x, y float32) {
+func (ps *pathString) sub() {
 	ps.Cur += 1
 	ps.Strings = append(ps.Strings, "")
-	//s := fmt.Sprintf(" M %f %f", x, y)
-	//ps.Strings[ps.Cur] = ps.Strings[ps.Cur] + s
 }
 
-func (ps *pathString) draw(dir string, l float32) {
+func (ps *pathString) draw(dir string, l float64) {
 	s := fmt.Sprintf(" %s %f", dir, l)
 	ps.Strings[ps.Cur] = ps.Strings[ps.Cur] + s
 }
 
 func (ps *pathString) close() {
-	ps.Strings[ps.Cur] = ps.Strings[ps.Cur] + " z"
-	ps.done()
-}
-
-func (ps *pathString) done() {
 	s := ps.Strings[0]
-	s += revert(ps.Strings[2])
-	s += revert(ps.Strings[1])
-	//s := strings.Join(ps.Strings, " ")
-	appendPath(s)
+	for i := 2; i < len(ps.Strings); i++ {
+		s += revert(ps.Strings[i])
+	}
+	s += ps.Strings[1]
+	appendPath(s + " z")
 }
 
-func (ps *pathString) line(dir string, l, wall, teeth, sign float32) float32 {
+func (ps *pathString) line(dir string, l, wall, teeth, sign float64, cut bool) float64 {
 	var otherdir string
 
 	if dir == "v" {
@@ -122,49 +120,107 @@ func (ps *pathString) line(dir string, l, wall, teeth, sign float32) float32 {
 		otherdir = "v"
 	}
 
+	inv := 1.0
+	if l < 0 {
+		l *= -1
+		inv = -1
+	}
+
+	if cut {
+		l -= wall
+		teeth -= wall
+	}
+
 	for l > teeth {
 		if l-teeth < wall {
-			ps.draw(dir, l-wall)
+			ps.draw(dir, inv*(l-wall))
 			l -= l - wall
 		} else {
-			ps.draw(dir, teeth)
+			ps.draw(dir, inv*(teeth))
 			l -= teeth
 		}
 		ps.draw(otherdir, sign*wall)
 		sign *= -1
+		if cut {
+			teeth += wall
+			cut = false
+		}
 	}
 	if l > 0 {
-		ps.draw(dir, l)
+		ps.draw(dir, inv*l)
 	}
 	return sign
 }
 
-func base(x, y, width, height, depth, wall, teeth float32) {
+func base(x, y, width, height, depth, wall, teeth float64) {
 	base := start(x, y)
-	sign := base.line("h", width, wall, teeth, 1)
+	sign := base.line("h", width, wall, teeth, 1, false)
+	sign = base.line("v", height, wall, teeth, -1, (sign == -1))
+	sign = base.line("h", -width, wall, teeth, -1, (sign == 1))
+	sign = base.line("v", -height, wall, teeth, 1, (sign == 1))
 	if sign == -1 {
-		base.line("v", height-wall, wall, teeth, -1)
-	} else {
-		base.line("v", height, wall, teeth, -1)
+		base = start(x+wall, y)
+		sign = base.line("h", width, wall, teeth, 1, true)
+		sign = base.line("v", height, wall, teeth, -1, (sign == -1))
+		sign = base.line("h", -width, wall, teeth, -1, (sign == 1))
+		sign = base.line("v", -height, wall, teeth, 1, (sign == 1))
 	}
-	
-	base.m(x, y)
-	sign = base.line("v", height, wall, teeth, -1)
-	base.m(x, y)
+	base.close()
+
+	top := start(x, y-wall-depth)
+	sign = top.line("h", width, wall, teeth, 1, true)
+	top.line("v", -depth, wall, teeth, -1, (sign == 1))
+	top.sub()
+	sign = top.line("v", -depth, wall, teeth, -1, true)
+	if sign == -1 {
+		top.move(x+wall, y-wall-depth)
+	}
+	top.close()
+
+	right := start(x+wall+depth+width, y)
+	sign = right.line("v", height, wall, teeth, -1, true)
+	right.line("h", depth, wall, teeth, -1, (sign == -1))
+	right.sub()
+	sign = right.line("h", depth, wall, teeth, -1, true)
+	if sign == -1 {
+		right.move(x+wall+depth+width, y+wall)
+	}
+	right.close()
+
+	bottom := start(x+width, y+height+wall+depth)
+	sign = bottom.line("h", -width, wall, teeth, -1, true)
+	bottom.line("v", depth, wall, teeth, 1, (sign == -1))
+	bottom.sub()
+	sign = bottom.line("v", depth, wall, teeth, 1, true)
 	if sign == 1 {
-		base.line("h", width-wall, wall, teeth, 1)
-	} else {
-		base.line("h", width, wall, teeth, 1)
+		bottom.move(x+width-wall, y+height+wall+depth)
 	}
-	base.done()
+	bottom.close()
+
+	left := start(x-wall-depth, y+height)
+	sign = left.line("v", -height, wall, teeth, 1, true)
+	left.line("h", -depth, wall, teeth, 1, (sign == 1))
+	left.sub()
+	sign = left.line("h", -depth, wall, teeth, 1, true)
+	if sign == 1 {
+		left.move(x-wall-depth, y+height-wall)
+	}
+	left.close()
 }
 
-func do(width, height, depth, wall, teeth float32) {
-	base(depth+4, depth+4, width, height, depth, wall, teeth)
+func do(width, height, depth, wall, teeth float64) {
+	width = width + 2*wall
+	height = height + 2*wall
+	depth = depth + wall
+	base(depth+wall, depth+wall, width, height, depth, wall, teeth)
+	width = width + 2*wall
+	height = height + 2*wall
+	depth = depth + wall
+	base(depth+wall, depth+2*depth+height, width, height, depth, wall, teeth)
 }
 
 func main() {
-	do(25, 21, 15, 3, 8)
+	do(65, 40, 65, 3.5, 9)
 
 	enc := xml.NewEncoder(os.Stdout)
 	enc.Indent("", "	")

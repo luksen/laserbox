@@ -51,9 +51,6 @@ func revert(s string) string {
 		if i%2 == 0 {
 			continue
 		}
-		//if i%4 == 3 {
-		//continue
-		//}
 		if part[0] == '-' {
 			parts[i] = part[1:len(part)]
 		} else {
@@ -220,7 +217,7 @@ func do(width, height, depth, wall, teeth float64) {
 }
 
 func main() {
-	do(65, 40, 65, 3.5, 9)
+	do(60, 95, 33.5, 3.5, 10)
 
 	enc := xml.NewEncoder(os.Stdout)
 	enc.Indent("", "	")

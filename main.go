@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/xml"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 )
@@ -43,7 +44,6 @@ func appendPath(data string) {
 }
 
 func revert(s string) string {
-	fmt.Println(s)
 	parts := strings.Fields(s)
 	l := len(parts)
 	newParts := make([]string, l)
@@ -63,7 +63,6 @@ func revert(s string) string {
 			newParts[l-1-i] = parts[i+1]
 		}
 	}
-	fmt.Println(strings.Join(newParts, " "))
 	return strings.Join(newParts, " ")
 }
 
@@ -149,7 +148,7 @@ func (ps *pathString) line(dir string, l, wall, teeth, sign float64, cut bool) f
 	return sign
 }
 
-func base(x, y, width, height, depth, wall, teeth float64) {
+func draw(x, y, width, height, depth, wall, teeth float64) {
 	base := start(x, y)
 	sign := base.line("h", width, wall, teeth, 1, false)
 	sign = base.line("v", height, wall, teeth, -1, (sign == -1))
@@ -209,27 +208,25 @@ func do(width, height, depth, wall, teeth float64) {
 	width = width + 2*wall
 	height = height + 2*wall
 	depth = depth + wall
-	base(depth+wall, depth+wall, width, height, depth, wall, teeth)
+	draw(depth+wall, depth+wall, width, height, depth, wall, teeth)
 	width = width + 2*wall
 	height = height + 2*wall
 	depth = depth + wall
-	base(depth+wall, depth+2*depth+height, width, height, depth, wall, teeth)
+	draw(depth+wall, depth+2*depth+height, width, height, depth, wall, teeth)
 }
 
 func main() {
 	do(60, 95, 33.5, 3.5, 10)
 
-	enc := xml.NewEncoder(os.Stdout)
+	f, err := os.Create("svgtest.svg")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+	enc := xml.NewEncoder(f)
 	enc.Indent("", "	")
-	if err := enc.Encode(svg); err != nil {
-		fmt.Printf("error: %v\n", err)
+	err = enc.Encode(svg)
+	if err != nil {
+		log.Fatal(err)
 	}
-	f, _ := os.Create("svgtest.svg")
-	enc2 := xml.NewEncoder(f)
-	enc2.Indent("", "	")
-	if err := enc2.Encode(svg); err != nil {
-		fmt.Printf("error: %v\n", err)
-	}
-	fmt.Println()
-
 }

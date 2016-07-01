@@ -1,10 +1,10 @@
-package main
+package laserbox
 
 import (
+	"bytes"
 	"encoding/xml"
 	"fmt"
 	"log"
-	"os"
 	"strings"
 )
 
@@ -215,18 +215,15 @@ func do(width, height, depth, wall, teeth float64) {
 	draw(depth+wall, depth+2*depth+height, width, height, depth, wall, teeth)
 }
 
-func main() {
-	do(60, 95, 33.5, 3.5, 10)
+func Do(width, height, depth, wall, teeth float64) string {
+	do(width, height, depth, wall, teeth)
 
-	f, err := os.Create("svgtest.svg")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
-	enc := xml.NewEncoder(f)
+	var buf bytes.Buffer
+	enc := xml.NewEncoder(&buf)
 	enc.Indent("", "	")
-	err = enc.Encode(svg)
+	err := enc.Encode(svg)
 	if err != nil {
 		log.Fatal(err)
 	}
+	return buf.String()
 }

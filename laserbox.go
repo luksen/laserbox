@@ -216,6 +216,21 @@ func do(width, height, depth, wall, teeth float64) {
 }
 
 func Do(width, height, depth, wall, teeth float64) string {
+	if width < 0 {
+		width *= -1
+	}
+	if height < 0 {
+		height *= -1
+	}
+	if depth < 0 {
+		depth *= -1
+	}
+	if wall < 0 {
+		wall *= -1
+	}
+	if teeth < 0 {
+		teeth *= -1
+	}
 	do(width, height, depth, wall, teeth)
 
 	var buf bytes.Buffer

@@ -204,18 +204,20 @@ func draw(x, y, width, height, depth, wall, teeth float64) {
 	left.close()
 }
 
-func do(width, height, depth, wall, teeth float64) {
+func do(width, height, depth, wall, teeth float64, lid bool) {
 	width = width + 2*wall
 	height = height + 2*wall
 	depth = depth + wall
 	draw(depth+wall, depth+wall, width, height, depth, wall, teeth)
-	width = width + 2*wall
-	height = height + 2*wall
-	depth = depth + wall
-	draw(depth+wall, depth+2*depth+height, width, height, depth, wall, teeth)
+	if lid {
+		width = width + 2*wall
+		height = height + 2*wall
+		depth = depth + wall
+		draw(depth+wall, depth+2*depth+height, width, height, depth, wall, teeth)
+	}
 }
 
-func Do(width, height, depth, wall, teeth float64) string {
+func Do(width, height, depth, wall, teeth float64, lid bool) string {
 	if width < 0 {
 		width *= -1
 	}
@@ -231,7 +233,7 @@ func Do(width, height, depth, wall, teeth float64) string {
 	if teeth < 0 {
 		teeth *= -1
 	}
-	do(width, height, depth, wall, teeth)
+	do(width, height, depth, wall, teeth, lid)
 
 	var buf bytes.Buffer
 	enc := xml.NewEncoder(&buf)

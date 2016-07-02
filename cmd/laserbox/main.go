@@ -17,6 +17,7 @@ var (
 	depthFlag    float64
 	materialFlag float64
 	teethFlag    float64
+	lidFlag      bool
 )
 
 func init() {
@@ -60,11 +61,18 @@ func init() {
 	)
 	flag.Float64Var(&teethFlag, "teeth", teethDefault, teethUsage)
 	flag.Float64Var(&teethFlag, "t", teethDefault, teethUsage+" (shorthand)")
+
+	const (
+		lidDefault = false
+		lidUsage   = "don't draw a lid"
+	)
+	flag.BoolVar(&lidFlag, "nolid", lidDefault, lidUsage)
+	flag.BoolVar(&lidFlag, "nl", lidDefault, lidUsage+" (shorthand)")
 }
 
 func main() {
 	flag.Parse()
-	xml := laserbox.Do(widthFlag, heightFlag, depthFlag, materialFlag, teethFlag)
+	xml := laserbox.Do(widthFlag, heightFlag, depthFlag, materialFlag, teethFlag, !lidFlag)
 
 	f, err := os.Create(outputFlag)
 	if err != nil {

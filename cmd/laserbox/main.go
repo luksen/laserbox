@@ -23,7 +23,7 @@ var (
 func init() {
 	const (
 		outputDefault = "laserbox.svg"
-		outputUsage   = "the output file"
+		outputUsage   = "`path` to the output file"
 	)
 	flag.StringVar(&outputFlag, "output", outputDefault, outputUsage)
 	flag.StringVar(&outputFlag, "o", outputDefault, outputUsage+" (shorthand)")

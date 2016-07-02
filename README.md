@@ -5,4 +5,4 @@ specify the internal dimensions of the box.
 
 # License
 
-(AGPL-3.0)[https://opensource.org/licenses/agpl-v3.html]
+[AGPL-3.0](https://opensource.org/licenses/agpl-v3.html)

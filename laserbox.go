@@ -1,3 +1,5 @@
+// Laserbox generates a vector image for laser-cutting a box with fitting lid.
+// You can specify the internal dimensions of the box.
 package laserbox
 
 import (
@@ -217,6 +219,13 @@ func do(width, height, depth, material, teeth float64, lid bool) {
 	}
 }
 
+// Do will generate the box for the given values.
+//     width: inner width of the base area in mm
+//     height: inner height of the base area in mm
+//     depth: inner depth of the box/height of the walls in mm
+//     material: thickness of material in mm
+//     teeth: length of teeth in mm
+//     lid: whether to draw a lid as well
 func Do(width, height, depth, material, teeth float64, lid bool) string {
 	if width < 0 {
 		width *= -1

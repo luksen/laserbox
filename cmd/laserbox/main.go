@@ -27,21 +27,21 @@ func init() {
 	flag.StringVar(&outputFlag, "output", outputDefault, outputUsage)
 	flag.StringVar(&outputFlag, "o", outputDefault, outputUsage+" (shorthand)")
 	const (
-		widthDefault = 0
+		widthDefault = 70
 		widthUsage   = "inner width of the base area in mm"
 	)
 	flag.Float64Var(&widthFlag, "width", widthDefault, widthUsage)
 	flag.Float64Var(&widthFlag, "w", widthDefault, widthUsage+" (shorthand)")
 
 	const (
-		heightDefault = 0
+		heightDefault = 100
 		heightUsage   = "inner height of the base area in mm"
 	)
 	flag.Float64Var(&heightFlag, "height", heightDefault, heightUsage)
 	flag.Float64Var(&heightFlag, "h", heightDefault, heightUsage+" (shorthand)")
 
 	const (
-		depthDefault = 0
+		depthDefault = 40
 		depthUsage   = "innner depth of the box/height of the walls in mm"
 	)
 	flag.Float64Var(&depthFlag, "depth", depthDefault, depthUsage)

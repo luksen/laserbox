@@ -107,7 +107,7 @@ func (ps *pathString) close() {
 	appendPath(s + " z")
 }
 
-func (ps *pathString) line(dir string, l, wall, teeth, sign float64, cut bool) float64 {
+func (ps *pathString) line(dir string, l, material, teeth, sign float64, cut bool) float64 {
 	var otherdir string
 
 	if dir == "v" {
@@ -123,22 +123,22 @@ func (ps *pathString) line(dir string, l, wall, teeth, sign float64, cut bool) f
 	}
 
 	if cut {
-		l -= wall
-		teeth -= wall
+		l -= material
+		teeth -= material
 	}
 
 	for l > teeth {
-		if l-teeth < wall {
-			ps.draw(dir, inv*(l-wall))
-			l -= l - wall
+		if l-teeth < material {
+			ps.draw(dir, inv*(l-material))
+			l -= l - material
 		} else {
 			ps.draw(dir, inv*(teeth))
 			l -= teeth
 		}
-		ps.draw(otherdir, sign*wall)
+		ps.draw(otherdir, sign*material)
 		sign *= -1
 		if cut {
-			teeth += wall
+			teeth += material
 			cut = false
 		}
 	}
@@ -148,76 +148,76 @@ func (ps *pathString) line(dir string, l, wall, teeth, sign float64, cut bool) f
 	return sign
 }
 
-func draw(x, y, width, height, depth, wall, teeth float64) {
+func draw(x, y, width, height, depth, material, teeth float64) {
 	base := start(x, y)
-	sign := base.line("h", width, wall, teeth, 1, false)
-	sign = base.line("v", height, wall, teeth, -1, (sign == -1))
-	sign = base.line("h", -width, wall, teeth, -1, (sign == 1))
-	sign = base.line("v", -height, wall, teeth, 1, (sign == 1))
+	sign := base.line("h", width, material, teeth, 1, false)
+	sign = base.line("v", height, material, teeth, -1, (sign == -1))
+	sign = base.line("h", -width, material, teeth, -1, (sign == 1))
+	sign = base.line("v", -height, material, teeth, 1, (sign == 1))
 	if sign == -1 {
-		base = start(x+wall, y)
-		sign = base.line("h", width, wall, teeth, 1, true)
-		sign = base.line("v", height, wall, teeth, -1, (sign == -1))
-		sign = base.line("h", -width, wall, teeth, -1, (sign == 1))
-		sign = base.line("v", -height, wall, teeth, 1, (sign == 1))
+		base = start(x+material, y)
+		sign = base.line("h", width, material, teeth, 1, true)
+		sign = base.line("v", height, material, teeth, -1, (sign == -1))
+		sign = base.line("h", -width, material, teeth, -1, (sign == 1))
+		sign = base.line("v", -height, material, teeth, 1, (sign == 1))
 	}
 	base.close()
 
-	top := start(x, y-wall-depth)
-	sign = top.line("h", width, wall, teeth, 1, true)
-	top.line("v", -depth, wall, teeth, -1, (sign == 1))
+	top := start(x, y-material-depth)
+	sign = top.line("h", width, material, teeth, 1, true)
+	top.line("v", -depth, material, teeth, -1, (sign == 1))
 	top.sub()
-	sign = top.line("v", -depth, wall, teeth, -1, true)
+	sign = top.line("v", -depth, material, teeth, -1, true)
 	if sign == -1 {
-		top.move(x+wall, y-wall-depth)
+		top.move(x+material, y-material-depth)
 	}
 	top.close()
 
-	right := start(x+wall+depth+width, y)
-	sign = right.line("v", height, wall, teeth, -1, true)
-	right.line("h", depth, wall, teeth, -1, (sign == -1))
+	right := start(x+material+depth+width, y)
+	sign = right.line("v", height, material, teeth, -1, true)
+	right.line("h", depth, material, teeth, -1, (sign == -1))
 	right.sub()
-	sign = right.line("h", depth, wall, teeth, -1, true)
+	sign = right.line("h", depth, material, teeth, -1, true)
 	if sign == -1 {
-		right.move(x+wall+depth+width, y+wall)
+		right.move(x+material+depth+width, y+material)
 	}
 	right.close()
 
-	bottom := start(x+width, y+height+wall+depth)
-	sign = bottom.line("h", -width, wall, teeth, -1, true)
-	bottom.line("v", depth, wall, teeth, 1, (sign == -1))
+	bottom := start(x+width, y+height+material+depth)
+	sign = bottom.line("h", -width, material, teeth, -1, true)
+	bottom.line("v", depth, material, teeth, 1, (sign == -1))
 	bottom.sub()
-	sign = bottom.line("v", depth, wall, teeth, 1, true)
+	sign = bottom.line("v", depth, material, teeth, 1, true)
 	if sign == 1 {
-		bottom.move(x+width-wall, y+height+wall+depth)
+		bottom.move(x+width-material, y+height+material+depth)
 	}
 	bottom.close()
 
-	left := start(x-wall-depth, y+height)
-	sign = left.line("v", -height, wall, teeth, 1, true)
-	left.line("h", -depth, wall, teeth, 1, (sign == 1))
+	left := start(x-material-depth, y+height)
+	sign = left.line("v", -height, material, teeth, 1, true)
+	left.line("h", -depth, material, teeth, 1, (sign == 1))
 	left.sub()
-	sign = left.line("h", -depth, wall, teeth, 1, true)
+	sign = left.line("h", -depth, material, teeth, 1, true)
 	if sign == 1 {
-		left.move(x-wall-depth, y+height-wall)
+		left.move(x-material-depth, y+height-material)
 	}
 	left.close()
 }
 
-func do(width, height, depth, wall, teeth float64, lid bool) {
-	width = width + 2*wall
-	height = height + 2*wall
-	depth = depth + wall
-	draw(depth+wall, depth+wall, width, height, depth, wall, teeth)
+func do(width, height, depth, material, teeth float64, lid bool) {
+	width = width + 2*material
+	height = height + 2*material
+	depth = depth + material
+	draw(depth+material, depth+material, width, height, depth, material, teeth)
 	if lid {
-		width = width + 2*wall
-		height = height + 2*wall
-		depth = depth + wall
-		draw(depth+wall, depth+2*depth+height, width, height, depth, wall, teeth)
+		width = width + 2*material
+		height = height + 2*material
+		depth = depth + material
+		draw(depth+material, depth+2*depth+height, width, height, depth, material, teeth)
 	}
 }
 
-func Do(width, height, depth, wall, teeth float64, lid bool) string {
+func Do(width, height, depth, material, teeth float64, lid bool) string {
 	if width < 0 {
 		width *= -1
 	}
@@ -227,13 +227,13 @@ func Do(width, height, depth, wall, teeth float64, lid bool) string {
 	if depth < 0 {
 		depth *= -1
 	}
-	if wall < 0 {
-		wall *= -1
+	if material < 0 {
+		material *= -1
 	}
 	if teeth < 0 {
 		teeth *= -1
 	}
-	do(width, height, depth, wall, teeth, lid)
+	do(width, height, depth, material, teeth, lid)
 
 	var buf bytes.Buffer
 	enc := xml.NewEncoder(&buf)

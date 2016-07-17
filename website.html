@@ -1,0 +1,31 @@
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Laserbox</title>
+
+	<script type="text/javascript" charset="utf-8">
+
+function updatePreview(addr) {
+	var addr = document.getElementById("width").value + "/";
+	addr += document.getElementById("height").value + "/";
+	addr += document.getElementById("depth").value + "/";
+	addr += document.getElementById("material").value + "/";
+	addr += document.getElementById("teeth").value + "/";
+	addr += document.getElementById("lid").value;
+	document.getElementById("preview").src = "/svg/" + addr;
+}
+
+	</script>
+</head>
+<body>
+	 <form oninput="javascript:updatePreview()">
+		Width: <input type="number" id="width"><br>
+		Height: <input type="number" id="height"><br>
+		Depth: <input type="number" id="depth"><br>
+		Material: <input type="number" id="material"><br>
+		Teeth: <input type="number" id="teeth"><br>
+		Lid: <input type="number" id="lid"><br>
+	</form>
+	<img src="" alt="Preview" id="preview"/>
+</body>
+</html>

@@ -211,7 +211,7 @@ func do(width, height, depth, material, teeth float64, lid bool) {
 	height = height + 2*material
 	depth = depth + material
 	draw(depth+material, depth+material, width, height, depth, material, teeth)
-	totalHeight := int(height + 2*depth + 2*material)
+	totalHeight := int(height+2*depth+2*material) + 1
 	if lid {
 		width = width + 2*material
 		height = height + 2*material
@@ -219,7 +219,7 @@ func do(width, height, depth, material, teeth float64, lid bool) {
 		draw(depth+material, depth+2*depth+height, width, height, depth, material, teeth)
 		totalHeight += int(height + 2*depth + 4*material)
 	}
-	totalWidth := int(width + 2*depth + 2*material)
+	totalWidth := int(width+2*depth+2*material) + 1
 	svg.Width = fmt.Sprintf("%dmm", totalWidth)
 	svg.Height = fmt.Sprintf("%dmm", totalHeight)
 	svg.ViewBox = fmt.Sprintf("0 0 %d %d", totalWidth, totalHeight)

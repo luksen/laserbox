@@ -257,5 +257,6 @@ func Do(width, height, depth, material, teeth float64, lid bool) string {
 	if err != nil {
 		log.Fatal(err)
 	}
+	svg.Paths = []*Path{}
 	return buf.String()
 }
